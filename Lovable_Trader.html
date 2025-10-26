@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lovable Trader</title>
+    <!-- Carrega o Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carrega a biblioteca de ícones Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Fonte Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Esconde o input de arquivo padrão */
+        #chartInput {
+            display: none;
+        }
+        /* Estilo customizado para o botão de upload */
+        .upload-label {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-label:hover {
+            opacity: 0.8;
+        }
+        /* Animação de carregamento - REMOVIDO SPINNER */
+        /* NOVO - Estilo do Console Hacker */
+        .hacker-console {
+            background-color: #0a0a0a;
+            border: 1px solid #0f0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            color: #0f0;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .hacker-line {
+            display: block;
+            margin-bottom: 4px;
+        }
+        .hacker-line.prompt::before {
+            content: '> ';
+            color: #0f0;
+        }
+        .hacker-line.success {
+            color: #34d399; /* Verde mais claro */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen antialiased">
+
+    <div class="container mx-auto max-w-2xl p-4">
+        
+        <!-- Cabeçalho -->
+        <header class="text-center my-6">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-300">
+                Lovable Trader
+            </h1>
+            <p class="text-lg text-gray-400">Seu assistente de análise técnica e gestão.</p>
+        </header>
+
+        <!-- Navegação das Abas -->
+        <nav class="flex justify-center bg-gray-800 rounded-lg p-2 mb-6 shadow-lg">
+            <button id="tabScanner" onclick="showView('scanner')" class="tab-button flex-1 text-center py-3 px-4 rounded-md font-semibold text-white bg-blue-600 shadow-md">
+                <i class="ph ph-chart-line-up align-middle mr-2"></i>
+                Analisar Gráfico
+            </button>
+            <button id="tabGestao" onclick="showView('gestao')" class="tab-button flex-1 text-center py-3 px-4 rounded-md font-semibold text-gray-300">
+                <i class="ph ph-bank align-middle mr-2"></i>
+                Gestão de Banca
+            </button>
+        </nav>
+
+        <!-- Conteúdo Principal -->
+        <main>
+
+            <!-- Visão: Scanner de Gráfico -->
+            <div id="viewScanner">
+                <div class="bg-gray-800 rounded-lg shadow-2xl p-6">
+                    
+                    <h2 class="text-2xl font-semibold mb-4 text-center">Scanner de Gráfico</h2>
+
+                    <!-- Área de Upload -->
+                    <label for="chartInput" class="upload-label w-full h-48 bg-gray-700 border-2 border-dashed border-gray-600 rounded-lg flex flex-col justify-center items-center text-gray-400 text-center">
+                        <i class="ph-light ph-upload-simple text-5xl mb-2"></i>
+                        <span class="font-medium">Clique para enviar um Print</span>
+                        <span class="text-sm">(PNG, JPG ou JPEG)</span>
+                    </label>
+                    <input type="file" id="chartInput" accept="image/png, image/jpeg" onchange="handleImageUpload(event)">
+
+                    <!-- Preview da Imagem -->
+                    <div id="imagePreviewContainer" class="my-4 hidden">
+                        <p class="text-sm text-gray-400 mb-2">Preview do gráfico:</p>
+                        <img id="imagePreview" src="#" alt="Preview do Gráfico" class="rounded-lg max-h-64 w-full object-cover border border-gray-700">
+                    </div>
+
+                    <!-- Botão de Análise -->
+                    <button id="analyzeButton" onclick="analyzeChart()" class="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-800 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Analisar Gráfico
+                    </button>
+
+                    <!-- Resultado da Análise (Simulado) -->
+                    <div id="analysisResult" class="mt-6 hidden">
+                        <!-- Loader - MODIFICADO -->
+                        <div id="loader" class="flex-col justify-center items-center my-4">
+                            <p class="text-lg text-gray-300 text-center mb-3 font-semibold">Analisando Padrões Complexos...</p>
+                            <!-- NOVO - Console Hacker -->
+                            <div id="hackerConsole" class="hacker-console">
+                                <span class="hacker-line prompt">Iniciando varredura neural...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Conteúdo do Resultado -->
+                        <div id="resultContent" class="hidden">
+                            <h3 class="text-xl font-semibold mb-3 text-center">Resultado da Análise</h3>
+                            <div id="resultCard" class="rounded-lg p-5 border-2">
+                                <p class="text-sm font-medium uppercase tracking-wider text-gray-400 mb-1">Padrão Identificado:</p>
+                                <h4 id="patternName" class="text-2xl font-bold mb-3"></h4>
+                                
+                                <p class="text-sm font-medium uppercase tracking-wider text-gray-400 mb-1">Sinal:</p>
+                                <p id="patternSignal" class="text-3xl font-bold mb-4"></p>
+                                
+                                <p class="text-sm font-medium uppercase tracking-wider text-gray-400 mb-1">O que significa:</p>
+                                <p id="patternDescription" class="text-gray-300"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visão: Gestão de Banca -->
+            <div id="viewGestao" class="hidden">
+                <div class="bg-gray-800 rounded-lg shadow-2xl p-6">
+                    <h2 class="text-2xl font-semibold mb-6 text-center">Gestão de Banca (3% Take / 3% Stop)</h2>
+
+                    <!-- Input da Banca -->
+                    <div class="mb-4">
+                        <label for="bancaInput" class="block text-sm font-medium text-gray-300 mb-1">Valor da sua Banca (R$)</label>
+                        <input type="number" id="bancaInput" placeholder="Ex: 1000.00" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <button onclick="calculateManagement()" class="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:from-teal-600 hover:to-cyan-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-opacity-75">
+                        Calcular Metas
+                    </button>
+
+                    <!-- Resultados da Gestão -->
+                    <div id="managementResult" class="mt-6 space-y-4 hidden">
+                        <!-- Meta de Lucro (Take) -->
+                        <div class="bg-gray-900 rounded-lg p-4 flex items-center justify-between shadow">
+                            <div>
+                                <p class="text-sm font-medium text-green-400">Meta de Lucro (Take)</p>
+                                <p id="takeProfit" class="text-2xl font-bold text-green-300">R$ 0,00</p>
+                            </div>
+                            <i class="ph-bold ph-trend-up text-4xl text-green-500"></i>
+                        </div>
+                        
+                        <!-- Limite de Perda (Stop) -->
+                        <div class="bg-gray-900 rounded-lg p-4 flex items-center justify-between shadow">
+                            <div>
+                                <p class="text-sm font-medium text-red-400">Limite de Perda (Stop)</p>
+                                <p id="stopLoss" class="text-2xl font-bold text-red-300">R$ 0,00</p>
+                            </div>
+                            <i class="ph-bold ph-trend-down text-4xl text-red-500"></i>
+                        </div>
+
+                        <!-- Banca Atual (Interativo) -->
+                        <div class="bg-gray-700 rounded-lg p-4 text-center">
+                            <p class="text-sm font-medium text-gray-300">Banca Atual (Sessão)</p>
+                            <p id="currentBanca" class="text-3xl font-bold my-2">R$ 0,00</p>
+                            <div class="flex justify-center gap-4 mt-4">
+                                <input type="number" id="operationValue" placeholder="Valor da Op." class="w-28 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button onclick="updateBalance('gain')" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">
+                                    <i class="ph ph-plus align-middle mr-1"></i> Gain
+                                </button>
+                                <button onclick="updateBalance('loss')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition-transform transform hover:scale-105">
+                                    <i class="ph ph-minus align-middle mr-1"></i> Loss
+                                </button>
+                            </div>
+                            <p id="sessionMessage" class="text-center mt-4 font-semibold text-lg"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Variáveis Globais ---
+        let currentView = 'scanner';
+        let bancaInicial = 0;
+        let bancaAtual = 0;
+        let metaTake = 0;
+        let metaStop = 0;
+        let hackerInterval; // Variável para controlar o intervalo do loader
+
+        // --- Simulação de Análise de IA ---
+        const simulatedPatterns = [
+            {
+                name: "Engolfo de Alta (Bullish Engulfing)",
+                signal: "COMPRAR AGORA!", // MODIFICADO
+                color: "text-green-400",
+                border: "border-green-500",
+                description: "Um forte sinal de reversão de alta. O corpo da vela de alta 'engole' completamente o corpo da vela de baixa anterior. Indica que os compradores assumiram o controle."
+            },
+            {
+                name: "Estrela Cadente (Shooting Star)",
+                signal: "VENDER AGORA!", // MODIFICADO
+                color: "text-red-400",
+                border: "border-red-500",
+                description: "Um sinal de reversão de baixa. Mostra uma longa sombra superior, indicando que os compradores tentaram empurrar o preço para cima, mas os vendedores dominaram e fecharam o preço perto da abertura."
+            },
+            {
+                name: "Martelo (Hammer)",
+                signal: "COMPRAR AGORA!", // MODIFICADO
+                color: "text-green-400",
+                border: "border-green-500",
+                description: "Um padrão de reversão de alta. Ocorre no fundo de uma tendência de baixa, com uma longa sombra inferior. Indica que, apesar da pressão de venda, os compradores conseguiram elevar o preço."
+            },
+            {
+                name: "Homem Enforcado (Hanging Man)",
+                signal: "VENDER AGORA!", // MODIFICADO
+                color: "text-red-400",
+                border: "border-red-500",
+                description: "Um padrão de reversão de baixa que se forma no topo de uma tendência de alta. Visualmente idêntico ao Martelo, mas sua localização no topo sugere uma potencial exaustão dos compradores."
+            }
+        ];
+
+        // --- Funções de Navegação ---
+        function showView(viewId) {
+            currentView = viewId;
+            const views = ['scanner', 'gestao'];
+            const tabs = ['tabScanner', 'tabGestao'];
+
+            views.forEach(view => {
+                document.getElementById(`view${view.charAt(0).toUpperCase() + view.slice(1)}`).classList.add('hidden');
+            });
+            
+            tabs.forEach(tab => {
+                const button = document.getElementById(tab);
+                button.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                button.classList.add('text-gray-300');
+            });
+
+            document.getElementById(`view${viewId.charAt(0).toUpperCase() + viewId.slice(1)}`).classList.remove('hidden');
+            const activeButton = document.getElementById(`tab${viewId.charAt(0).toUpperCase() + viewId.slice(1)}`);
+            activeButton.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            activeButton.classList.remove('text-gray-300');
+        }
+
+        // --- Funções do Scanner ---
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                    document.getElementById('analyzeButton').disabled = false;
+                }
+                reader.readAsDataURL(file);
+                // Reseta a análise anterior
+                document.getElementById('analysisResult').classList.add('hidden');
+                document.getElementById('resultContent').classList.add('hidden');
+            }
+        }
+
+        function analyzeChart() {
+            const resultContainer = document.getElementById('analysisResult');
+            const loader = document.getElementById('loader');
+            const resultContent = document.getElementById('resultContent');
+            const resultCard = document.getElementById('resultCard');
+            const hackerConsole = document.getElementById('hackerConsole');
+
+            // 1. Limpa o console antigo e mostra o loader
+            hackerConsole.innerHTML = '<span class="hacker-line prompt">Iniciando varredura neural...</span>';
+            resultContainer.classList.remove('hidden');
+            loader.classList.remove('hidden');
+            resultContent.classList.add('hidden');
+
+            // Limpa qualquer animação anterior
+            if (hackerInterval) {
+                clearInterval(hackerInterval);
+            }
+
+            // 2. Simula o tempo de análise da IA com animação hacker
+            const analysisSteps = [
+                "Analisando timeframes (M1, M5, M15)...",
+                "Verificando indicadores: Bandas de Bollinger...",
+                "Cruzando dados: RSI e MACD...",
+                "Detectando zonas de Suporte/Resistência...",
+                "Varrendo padrões de candlestick...",
+                "Análise de volume concluída.",
+                "Processando... Padrão encontrado!",
+            ];
+            let step = 0;
+
+            hackerInterval = setInterval(() => {
+                if (step < analysisSteps.length) {
+                    const line = document.createElement('span');
+                    line.className = 'hacker-line ' + (step === analysisSteps.length - 1 ? 'success' : 'prompt');
+                    line.textContent = analysisSteps[step];
+                    hackerConsole.appendChild(line);
+                    // Auto-scroll para o final
+                    hackerConsole.scrollTop = hackerConsole.scrollHeight;
+                    step++;
+                } else {
+                    // Termina a animação
+                    clearInterval(hackerInterval);
+                    
+                    // 3. Escolhe um padrão aleatório
+                    const randomPattern = simulatedPatterns[Math.floor(Math.random() * simulatedPatterns.length)];
+                    
+                    // 4. Preenche o card de resultado
+                    document.getElementById('patternName').textContent = randomPattern.name;
+                    document.getElementById('patternSignal').textContent = randomPattern.signal;
+                    document.getElementById('patternDescription').textContent = randomPattern.description;
+                    
+                    // Reseta e aplica classes de cor
+                    const signalElement = document.getElementById('patternSignal');
+                    const nameElement = document.getElementById('patternName');
+                    
+                    resultCard.className = "rounded-lg p-5 border-2"; // Reseta classes
+                    signalElement.className = "text-3xl font-bold mb-4";
+                    nameElement.className = "text-2xl font-bold mb-3";
+
+                    resultCard.classList.add(randomPattern.border);
+                    signalElement.classList.add(randomPattern.color);
+                    nameElement.classList.add(randomPattern.color);
+
+
+                    // 5. Esconde o loader e mostra o resultado
+                    loader.classList.add('hidden');
+                    resultContent.classList.remove('hidden');
+                }
+            }, 600); // Tempo entre cada linha do console
+        }
+
+        // --- Funções de Gestão de Banca ---
+        
+
